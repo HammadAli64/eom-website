@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/venv/
+backend/.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+.venv/
+
+# Build / output
+frontend/.next/
+frontend/out/
+*.egg-info/
+dist/
+build/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Database (optional: remove if you want to commit SQLite for demo)
+backend/db.sqlite3
+*.sqlite3
+
+# Media uploads (optional: remove if you want to commit sample media)
+backend/media/
+
+# IDE & OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# Testing & coverage
+.coverage
+htmlcov/
+.pytest_cache/
+frontend/coverage/
