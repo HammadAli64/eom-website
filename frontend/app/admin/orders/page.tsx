@@ -18,15 +18,24 @@ export default function AdminOrdersPage() {
   const [data, setData] = useState<AdminOrdersResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<AdminOrderFilter>('all');
+  const now = new Date();
+  const [year, setYear] = useState<number>(now.getFullYear());
+  const [month, setMonth] = useState<number>(now.getMonth() + 1);
+  const [fromDate, setFromDate] = useState<string>('');
+  const [toDate, setToDate] = useState<string>('');
 
   useEffect(() => {
     setLoading(true);
     admin
-      .orders(filter)
+      .orders(
+        fromDate || toDate
+          ? { status: filter, start: fromDate ? `${fromDate}T00:00:00` : undefined, end: toDate ? `${toDate}T23:59:59` : undefined }
+          : { status: filter, year, month }
+      )
       .then(setData)
       .catch(() => setData({ orders: [], stats: { all: 0, pending: 0, sent: 0, complete: 0, return: 0 } }))
       .finally(() => setLoading(false));
-  }, [filter]);
+  }, [filter, year, month, fromDate, toDate]);
 
   if (loading && !data) {
     return (
@@ -39,6 +48,7 @@ export default function AdminOrdersPage() {
 
   const orders: Order[] = data?.orders ?? [];
   const stats = data?.stats;
+  const revenue = data?.revenue;
 
   return (
     <div>
@@ -75,6 +85,49 @@ export default function AdminOrdersPage() {
             </button>
           ))}
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-gold-200 bg-white text-sm"
+            />
+            <span className="text-sm text-charcoal-500">to</span>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-gold-200 bg-white text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => { setFromDate(''); setToDate(''); }}
+              className="px-3 py-2 rounded-lg border border-gold-200 text-sm hover:bg-gold-50"
+            >
+              Clear range
+            </button>
+          </div>
+          <select
+            value={month}
+            onChange={(e) => setMonth(parseInt(e.target.value, 10))}
+            className="px-3 py-2 rounded-lg border border-gold-200 bg-white text-sm"
+          >
+            {Array.from({ length: 12 }).map((_, i) => (
+              <option key={i + 1} value={i + 1}>
+                {new Date(2000, i, 1).toLocaleString(undefined, { month: 'long' })}
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            value={year}
+            onChange={(e) => setYear(parseInt(e.target.value, 10) || now.getFullYear())}
+            className="w-28 px-3 py-2 rounded-lg border border-gold-200 bg-white text-sm"
+            min={2020}
+            max={2100}
+          />
+        </div>
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-charcoal-700">
             <div className="bg-cream-50 rounded-lg px-3 py-2 border border-gold-100">
@@ -96,6 +149,51 @@ export default function AdminOrdersPage() {
           </div>
         )}
       </div>
+
+      {revenue ? (
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-white rounded-xl border border-gold-100 shadow-luxury p-4">
+            <p className="text-xs text-charcoal-500">Completed revenue (delivered)</p>
+            <p className="text-2xl font-semibold text-charcoal-800 mt-1">{revenue.complete.toFixed(2)}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gold-100 shadow-luxury p-4">
+            <p className="text-xs text-charcoal-500">Revenue (all non-cancelled)</p>
+            <p className="text-2xl font-semibold text-charcoal-800 mt-1">{revenue.all_non_cancelled.toFixed(2)}</p>
+          </div>
+        </div>
+      ) : null}
+
+      {data?.series?.length ? (
+        <div className="mb-6 bg-white rounded-xl border border-gold-100 shadow-luxury p-4">
+          <h2 className="font-serif text-lg text-charcoal-800 mb-3">Orders by day</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-charcoal-600">
+                  <th className="py-2 pr-3">Date</th>
+                  <th className="py-2 pr-3">All</th>
+                  <th className="py-2 pr-3">Pending</th>
+                  <th className="py-2 pr-3">Sent</th>
+                  <th className="py-2 pr-3">Complete</th>
+                  <th className="py-2 pr-3">Return</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.series.map((r) => (
+                  <tr key={r.label} className="border-t border-gold-100">
+                    <td className="py-2 pr-3 text-charcoal-600">{r.label}</td>
+                    <td className="py-2 pr-3 font-medium">{r.all}</td>
+                    <td className="py-2 pr-3">{r.pending}</td>
+                    <td className="py-2 pr-3">{r.sent}</td>
+                    <td className="py-2 pr-3">{r.complete}</td>
+                    <td className="py-2 pr-3">{r.return}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl border border-gold-100 shadow-luxury overflow-hidden">
         <div className="overflow-x-auto">
