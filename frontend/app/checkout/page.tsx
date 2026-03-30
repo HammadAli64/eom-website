@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/components/CartProvider';
 import { useAuth } from '@/components/AuthProvider';
-import { orders } from '@/lib/api';
+import { orders, api } from '@/lib/api';
 import type { ShippingInfo } from '@/lib/api';
 
 export default function CheckoutPage() {
@@ -16,7 +16,6 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<ShippingInfo>({
     shipping_name: '',
-    shipping_email: '',
     shipping_phone: '',
     shipping_address: '',
     shipping_city: '',
@@ -25,6 +24,7 @@ export default function CheckoutPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
 
   useEffect(() => {
     if (!token) router.push('/login');
@@ -33,6 +33,12 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (token && cart?.items?.length === 0 && !orderId) router.push('/cart');
   }, [token, cart, orderId, router]);
+
+  useEffect(() => {
+    api<{ delivery_charge: string }>('/settings/', { token: false })
+      .then((s) => setDeliveryCharge(Number(s.delivery_charge) || 0))
+      .catch(() => setDeliveryCharge(0));
+  }, []);
 
   const update = (k: keyof ShippingInfo, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -76,6 +82,9 @@ export default function CheckoutPage() {
 
   if (!cart || cart.items.length === 0) return null;
 
+  const cartSubtotal = Number(cart.total) || 0;
+  const grandTotal = cartSubtotal + deliveryCharge;
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="font-serif text-3xl text-gold-700 mb-8">Checkout</h1>
@@ -109,8 +118,9 @@ export default function CheckoutPage() {
               <input type="text" value={form.shipping_name} onChange={(e) => update('shipping_name', e.target.value)} required className="w-full px-4 py-2.5 rounded-lg border border-gold-200 focus:border-gold-500 outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 mb-1">Email *</label>
-              <input type="email" value={form.shipping_email} onChange={(e) => update('shipping_email', e.target.value)} required className="w-full px-4 py-2.5 rounded-lg border border-gold-200 focus:border-gold-500 outline-none" />
+              <p className="text-sm text-charcoal-600">
+                Order confirmation will be sent to your login email.
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-charcoal-700 mb-1">Phone *</label>
@@ -126,8 +136,13 @@ export default function CheckoutPage() {
                 <input type="text" value={form.shipping_city} onChange={(e) => update('shipping_city', e.target.value)} required className="w-full px-4 py-2.5 rounded-lg border border-gold-200 focus:border-gold-500 outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-charcoal-700 mb-1">Postal code *</label>
-                <input type="text" value={form.shipping_postal_code} onChange={(e) => update('shipping_postal_code', e.target.value)} required className="w-full px-4 py-2.5 rounded-lg border border-gold-200 focus:border-gold-500 outline-none" />
+                <label className="block text-sm font-medium text-charcoal-700 mb-1">Postal code (optional)</label>
+                <input
+                  type="text"
+                  value={form.shipping_postal_code}
+                  onChange={(e) => update('shipping_postal_code', e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gold-200 focus:border-gold-500 outline-none"
+                />
               </div>
             </div>
             <div>
@@ -157,9 +172,20 @@ export default function CheckoutPage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 pt-4 border-t border-gold-200 flex justify-between text-lg font-semibold text-charcoal-800">
-                Total <span className="text-gold-700">{cart.total}</span>
-              </p>
+              <div className="mt-4 pt-4 border-t border-gold-200 space-y-2 text-charcoal-800">
+                <p className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span className="text-gold-700 font-medium">{cart.total}</span>
+                </p>
+                <p className="flex justify-between text-sm text-charcoal-600">
+                  <span>Delivery charges</span>
+                  <span className="text-gold-700 font-medium">{deliveryCharge}</span>
+                </p>
+                <p className="flex justify-between text-lg font-semibold">
+                  <span>Total</span>
+                  <span className="text-gold-700">{grandTotal}</span>
+                </p>
+              </div>
             </div>
             <div className="flex flex-wrap gap-4">
               <button type="button" onClick={() => setStep(1)} className="px-6 py-3 border border-gold-300 text-gold-700 rounded-lg font-medium hover:bg-gold-50">

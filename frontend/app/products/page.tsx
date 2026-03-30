@@ -34,7 +34,10 @@ export default function ProductsPage() {
         search: search || undefined,
       })
       .then((res) => setData({ results: res.results, count: res.count, next: res.next, previous: res.previous }))
-      .catch(() => setData({ results: [], count: 0, next: null, previous: null }))
+      .catch((err) => {
+        console.error('Products list API error:', err);
+        setData({ results: [], count: 0, next: null, previous: null });
+      })
       .finally(() => setLoading(false));
   }, [page, category, minPrice, maxPrice, sort, search]);
 
@@ -42,28 +45,29 @@ export default function ProductsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-serif text-3xl md:text-4xl text-gold-700 mb-8">
+      <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="font-serif font-extrabold tracking-tight text-3xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-gold-500 via-gold-700 to-gold-500 mb-8">
         Shop
       </motion.h1>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        <aside className="lg:w-64 flex-shrink-0 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-charcoal-700 mb-2">Search</label>
+      <div className="rounded-2xl bg-white shadow-luxury border border-gold-100/60 p-4 md:p-5 mb-8">
+        <div className="flex flex-wrap items-end gap-3 md:gap-4">
+          <div className="flex-1 min-w-[220px]">
+            <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">SEARCH</label>
             <input
               type="text"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Search products..."
-              className="w-full px-3 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-gold-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-200/60 outline-none transition-all"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-charcoal-700 mb-2">Category</label>
+
+          <div className="min-w-[180px]">
+            <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">CATEGORY</label>
             <select
               value={category}
               onChange={(e) => { setCategory(e.target.value); setPage(1); }}
-              className="w-full px-3 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-gold-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-200/60 outline-none transition-all bg-white"
             >
               <option value="">All</option>
               {cats.map((c) => (
@@ -71,31 +75,35 @@ export default function ProductsPage() {
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-charcoal-700 mb-2">Price range</label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                placeholder="Min"
-                value={minPrice}
-                onChange={(e) => { setMinPrice(e.target.value); setPage(1); }}
-                className="w-full px-3 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none"
-              />
-              <input
-                type="number"
-                placeholder="Max"
-                value={maxPrice}
-                onChange={(e) => { setMaxPrice(e.target.value); setPage(1); }}
-                className="w-full px-3 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none"
-              />
-            </div>
+
+          <div className="min-w-[120px]">
+            <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">MIN</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={minPrice}
+              onChange={(e) => { setMinPrice(e.target.value); setPage(1); }}
+              className="w-full px-4 py-3 rounded-xl border border-gold-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-200/60 outline-none transition-all"
+            />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-charcoal-700 mb-2">Sort</label>
+
+          <div className="min-w-[120px]">
+            <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">MAX</label>
+            <input
+              type="number"
+              placeholder="Any"
+              value={maxPrice}
+              onChange={(e) => { setMaxPrice(e.target.value); setPage(1); }}
+              className="w-full px-4 py-3 rounded-xl border border-gold-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-200/60 outline-none transition-all"
+            />
+          </div>
+
+          <div className="min-w-[200px]">
+            <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">SORT</label>
             <select
               value={sort}
               onChange={(e) => { setSort(e.target.value); setPage(1); }}
-              className="w-full px-3 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-gold-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-200/60 outline-none transition-all bg-white"
             >
               <option value="">Newest</option>
               <option value="price_asc">Price: Low to High</option>
@@ -103,9 +111,25 @@ export default function ProductsPage() {
               <option value="newest">Newest</option>
             </select>
           </div>
-        </aside>
 
-        <div className="flex-1">
+          <button
+            type="button"
+            onClick={() => {
+              setSearch('');
+              setCategory('');
+              setMinPrice('');
+              setMaxPrice('');
+              setSort('');
+              setPage(1);
+            }}
+            className="px-5 py-3 rounded-xl bg-gold-500 text-white font-semibold hover:bg-gold-600 transition-colors"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <div>
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -120,7 +144,7 @@ export default function ProductsPage() {
             <>
               <motion.div
                 layout
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
               >
                 {data.results.map((p, i) => (
                   <ProductCard key={p.id} product={p} index={i} />
@@ -152,7 +176,6 @@ export default function ProductsPage() {
               )}
             </>
           )}
-        </div>
       </div>
     </div>
   );

@@ -9,9 +9,16 @@ import type { AdminDashboard } from '@/lib/api';
 export default function AdminDashboardPage() {
   const [data, setData] = useState<AdminDashboard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deliveryCharge, setDeliveryCharge] = useState('');
+  const [savingDelivery, setSavingDelivery] = useState(false);
+  const [deliveryError, setDeliveryError] = useState('');
 
   useEffect(() => {
     admin.dashboard().then(setData).catch(() => setData(null)).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    admin.storeSettings().then((s) => setDeliveryCharge(String(s.delivery_charge))).catch(() => {});
   }, []);
 
   if (loading) {
@@ -43,6 +50,43 @@ export default function AdminDashboardPage() {
       <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-serif text-2xl text-charcoal-800 mb-8">
         Dashboard
       </motion.h1>
+
+      <div className="bg-white rounded-xl border border-gold-100 shadow-luxury p-6 mb-10">
+        <h2 className="font-serif text-lg text-charcoal-800 mb-4">Store settings</h2>
+        {deliveryError && <p className="text-sm text-red-600 mb-3">{deliveryError}</p>}
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">DELIVERY CHARGE</label>
+            <input
+              type="number"
+              step="1"
+              value={deliveryCharge}
+              onChange={(e) => setDeliveryCharge(e.target.value)}
+              className="w-48 px-4 py-2.5 rounded-xl border border-gold-200 focus:border-gold-500 outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            disabled={savingDelivery}
+            onClick={async () => {
+              setSavingDelivery(true);
+              setDeliveryError('');
+              try {
+                const res = await admin.storeSettingsUpdate(String(Number(deliveryCharge) || 0));
+                setDeliveryCharge(String(res.delivery_charge));
+              } catch (e) {
+                setDeliveryError(e instanceof Error ? e.message : 'Failed to save');
+              } finally {
+                setSavingDelivery(false);
+              }
+            }}
+            className="px-5 py-2.5 rounded-xl bg-gold-500 text-white font-semibold hover:bg-gold-600 disabled:opacity-50"
+          >
+            {savingDelivery ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+        <p className="text-xs text-charcoal-500 mt-3">This charge is used for order totals and emails.</p>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         {cards.map((card, i) => (

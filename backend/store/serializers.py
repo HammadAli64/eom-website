@@ -66,8 +66,8 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'slug', 'price', 'category', 'category_name',
-            'stock', 'is_featured', 'primary_image', 'created_at'
+            'id', 'name', 'slug', 'price', 'compare_at_price', 'is_on_sale',
+            'category', 'category_name', 'stock', 'is_featured', 'primary_image', 'created_at'
         ]
 
     def get_primary_image(self, obj):
@@ -87,8 +87,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'slug', 'description', 'price', 'category', 'category_name',
-            'stock', 'is_featured', 'images', 'reviews', 'average_rating', 'created_at'
+            'id', 'name', 'slug', 'description', 'price', 'compare_at_price', 'is_on_sale',
+            'category', 'category_name', 'stock', 'is_featured',
+            'images', 'reviews', 'average_rating', 'created_at'
         ]
 
     def get_reviews(self, obj):
@@ -162,9 +163,25 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class CreateOrderSerializer(serializers.Serializer):
     shipping_name = serializers.CharField(max_length=255)
-    shipping_email = serializers.EmailField()
     shipping_phone = serializers.CharField(max_length=20)
     shipping_address = serializers.CharField()
     shipping_city = serializers.CharField(max_length=100)
-    shipping_postal_code = serializers.CharField(max_length=20)
+    shipping_postal_code = serializers.CharField(max_length=20, required=False, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True)
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=10)
+    new_password = serializers.CharField(write_only=True)
+    new_password_confirm = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        if data["new_password"] != data["new_password_confirm"]:
+            raise serializers.ValidationError({"new_password_confirm": "Passwords do not match."})
+        validate_password(data["new_password"])
+        return data

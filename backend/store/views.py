@@ -2,7 +2,10 @@
 Store API views: Auth, Products, Cart, Orders.
 """
 import uuid
+from decimal import Decimal
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from django.utils.crypto import salted_hmac, constant_time_compare
 from django.db import transaction
 from rest_framework import status, generics
 from rest_framework.exceptions import ValidationError
@@ -11,14 +14,15 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.pagination import PageNumberPagination
-from .models import Category, Product, Cart, CartItem, Order, OrderItem
+from .models import Category, Product, Cart, CartItem, Order, OrderItem, PasswordResetOTP, StoreSettings
 from .serializers import (
     UserSerializer, UserSignupSerializer,
     ProductListSerializer, ProductDetailSerializer, ReviewSerializer,
     CartSerializer, CartItemSerializer,
     OrderSerializer, CreateOrderSerializer,
+    PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
 )
-from .email_service import send_order_confirmation_email, send_admin_order_notification
+from .email_service import send_order_confirmation_email, send_admin_order_notification, send_password_reset_otp
 
 User = get_user_model()
 
@@ -62,6 +66,86 @@ def login(request):
 @permission_classes([IsAuthenticated])
 def me(request):
     return Response(UserSerializer(request.user).data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def store_settings(request):
+    """Public store settings for frontend display."""
+    s = StoreSettings.get_solo()
+    return Response({'delivery_charge': str(s.delivery_charge)})
+
+
+def _otp_hash(user_id: int, otp: str) -> str:
+    return salted_hmac("pwd_reset_otp", f"{user_id}:{otp}").hexdigest()
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset_request(request):
+    """
+    Request an OTP for password reset. Always returns 200 to avoid user enumeration.
+    """
+    serializer = PasswordResetRequestSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response({"ok": True}, status=status.HTTP_200_OK)
+    email = serializer.validated_data["email"].strip().lower()
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({"ok": True}, status=status.HTTP_200_OK)
+
+    # Generate 6-digit OTP
+    import secrets
+    otp = f"{secrets.randbelow(1000000):06d}"
+    expires_at = timezone.now() + timezone.timedelta(minutes=10)
+    PasswordResetOTP.objects.create(user=user, code_hash=_otp_hash(user.id, otp), expires_at=expires_at)
+    try:
+        send_password_reset_otp(email=user.email, otp=otp)
+    except Exception:
+        pass
+    return Response({"ok": True}, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset_confirm(request):
+    """
+    Confirm OTP and set a new password. Returns auth token + user (auto-login).
+    """
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    email = serializer.validated_data["email"].strip().lower()
+    otp = serializer.validated_data["otp"].strip()
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+    pr = (
+        PasswordResetOTP.objects.filter(user=user, used_at__isnull=True, expires_at__gt=timezone.now())
+        .order_by("-created_at")
+        .first()
+    )
+    if not pr:
+        return Response({"error": "OTP expired. Request a new code."}, status=status.HTTP_400_BAD_REQUEST)
+
+    pr.attempts = (pr.attempts or 0) + 1
+    pr.save(update_fields=["attempts"])
+    if pr.attempts > 8:
+        return Response({"error": "Too many attempts. Request a new code."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not constant_time_compare(pr.code_hash, _otp_hash(user.id, otp)):
+        return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(serializer.validated_data["new_password"])
+    user.save(update_fields=["password"])
+    pr.used_at = timezone.now()
+    pr.save(update_fields=["used_at"])
+    Token.objects.filter(user=user).delete()
+    token = Token.objects.create(user=user)
+    return Response({"user": UserSerializer(user).data, "token": token.key})
 
 
 # ----- Products -----
@@ -243,15 +327,15 @@ def create_order(request):
             user=request.user,
             order_number=order_number,
             shipping_name=data['shipping_name'],
-            shipping_email=data['shipping_email'],
+            shipping_email=getattr(request.user, "email", "") or "",
             shipping_phone=data['shipping_phone'],
             shipping_address=data['shipping_address'],
             shipping_city=data['shipping_city'],
-            shipping_postal_code=data['shipping_postal_code'],
+            shipping_postal_code=data.get('shipping_postal_code', '') or '',
             notes=data.get('notes', ''),
             total=0,
         )
-        total = 0
+        items_total = Decimal('0')
         for cart_item in cart.items.select_related('product').all():
             if cart_item.product.stock < cart_item.quantity:
                 raise ValidationError(
@@ -263,10 +347,12 @@ def create_order(request):
                 quantity=cart_item.quantity,
                 price=cart_item.product.price,
             )
-            total += cart_item.product.price * cart_item.quantity
+            items_total += cart_item.product.price * cart_item.quantity
             cart_item.product.stock -= cart_item.quantity
             cart_item.product.save()
-        order.total = total
+        from .models import StoreSettings
+        shipping_charge = Decimal(str(StoreSettings.get_solo().delivery_charge))
+        order.total = items_total + shipping_charge
         order.save()
         cart.items.all().delete()
     # Emails

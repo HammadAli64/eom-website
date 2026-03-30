@@ -21,9 +21,11 @@ export default function AdminEditProductPage() {
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [compareAtPrice, setCompareAtPrice] = useState('');
   const [category, setCategory] = useState('');
   const [stock, setStock] = useState('0');
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isOnSale, setIsOnSale] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -42,9 +44,11 @@ export default function AdminEditProductPage() {
       setSlug(data.slug);
       setDescription(data.description || '');
       setPrice(data.price);
+      setCompareAtPrice(data.compare_at_price || '');
       setStock(String(data.stock ?? 0));
       setCategory(String(data.category));
       setIsFeatured(data.is_featured ?? false);
+      setIsOnSale(Boolean(data.is_on_sale));
     }).catch(() => setProduct(null));
   }, [id]);
 
@@ -58,6 +62,8 @@ export default function AdminEditProductPage() {
         slug,
         description,
         price: String(parseFloat(price) || 0),
+        is_on_sale: isOnSale,
+        compare_at_price: isOnSale && compareAtPrice ? String(parseFloat(compareAtPrice) || 0) : null,
         category: parseInt(category, 10),
         stock: parseInt(stock, 10) || 0,
         is_featured: isFeatured,
@@ -130,6 +136,24 @@ export default function AdminEditProductPage() {
           <div>
             <label className="block text-sm font-medium text-charcoal-700 mb-1">Stock</label>
             <input type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 items-end">
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="sale" checked={isOnSale} onChange={(e) => setIsOnSale(e.target.checked)} className="rounded border-gold-300" />
+            <label htmlFor="sale" className="text-sm text-charcoal-700">On sale</label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-charcoal-700 mb-1">Cross price</label>
+            <input
+              type="number"
+              step="0.01"
+              value={compareAtPrice}
+              onChange={(e) => setCompareAtPrice(e.target.value)}
+              disabled={!isOnSale}
+              placeholder="optional"
+              className="w-full px-4 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none disabled:opacity-60"
+            />
           </div>
         </div>
         <div>

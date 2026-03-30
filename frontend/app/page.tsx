@@ -7,6 +7,23 @@ import { ProductCard } from '@/components/ProductCard';
 import { products, categories } from '@/lib/api';
 import type { ProductListItem, Category } from '@/lib/api';
 
+const titleVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const titleChildVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } },
+};
+
 export default function HomePage() {
   const [featured, setFeatured] = useState<ProductListItem[]>([]);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
@@ -16,10 +33,17 @@ export default function HomePage() {
   const [shopLoading, setShopLoading] = useState(true);
   const [shopCategory, setShopCategory] = useState<string>('');
   const [shopSearch, setShopSearch] = useState('');
+  const [shopMinPrice, setShopMinPrice] = useState('');
+  const [shopMaxPrice, setShopMaxPrice] = useState('');
 
   useEffect(() => {
-    products.featured().then(setFeatured).catch(() => []).finally(() => setLoadingFeatured(false));
+    products.featured().then(setFeatured).catch((err) => {
+      console.error('Featured products API error:', err);
+      setFeatured([]);
+    }).finally(() => setLoadingFeatured(false));
   }, []);
+
+  // Featured carousel is a continuous marquee (see markup below)
 
   useEffect(() => {
     categories.list().then(setCats).catch(() => []);
@@ -32,31 +56,36 @@ export default function HomePage() {
         page: 1,
         category: shopCategory ? parseInt(shopCategory, 10) : undefined,
         search: shopSearch || undefined,
+        min_price: shopMinPrice ? parseFloat(shopMinPrice) : undefined,
+        max_price: shopMaxPrice ? parseFloat(shopMaxPrice) : undefined,
       })
       .then((res) => setShopItems(res.results))
-      .catch(() => setShopItems([]))
+      .catch((err) => {
+        console.error('Products list API error:', err);
+        setShopItems([]);
+      })
       .finally(() => setShopLoading(false));
-  }, [shopCategory, shopSearch]);
+  }, [shopCategory, shopSearch, shopMinPrice, shopMaxPrice]);
 
   return (
-    <div>
+    <div className="bg-cream-50">
       {/* Hero */}
       <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1920')] bg-cover bg-center" />
-        <div className="absolute inset-0 bg-charcoal-900/50" />
+        <div className="absolute inset-0 bg-charcoal-900/60" />
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          initial="hidden"
+          animate="visible"
+          variants={titleVariants}
           className="relative z-10 text-center text-white px-4"
         >
-          <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl text-white mb-4 drop-shadow-lg">
+          <motion.h1 variants={titleChildVariants} className="font-serif font-extrabold tracking-tight text-4xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-gold-200 via-white to-gold-300 mb-4 drop-shadow-lg">
             Elegant Bridal Jewelry
-          </h1>
-          <p className="text-xl md:text-2xl text-cream-200 max-w-2xl mx-auto mb-8">
+          </motion.h1>
+          <motion.p variants={titleChildVariants} className="text-xl md:text-2xl text-cream-200 max-w-2xl mx-auto mb-8">
             Handpicked pieces to make your special day shine
-          </p>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+          </motion.p>
+          <motion.div variants={titleChildVariants}>
             <Link href="/products" className="inline-block px-8 py-4 bg-gold-500 text-white font-medium rounded-lg hover:bg-gold-600 transition-colors shadow-lg">
               Shop the collection
             </Link>
@@ -64,29 +93,61 @@ export default function HomePage() {
         </motion.div>
       </section>
 
+      {/* Moving banners */}
+      <section className="bg-charcoal-900">
+        <div className="marquee border-y border-white/10">
+          <div className="marquee-track py-3">
+            {[
+              'Premium bridal sets •',
+              'Handcrafted finish •',
+              'Fast delivery across Pakistan •',
+              'New arrivals weekly •',
+              'Wedding-ready sparkle •',
+              'Trusted by brides •',
+            ].concat([
+              'Premium bridal sets •',
+              'Handcrafted finish •',
+              'Fast delivery across Pakistan •',
+              'New arrivals weekly •',
+              'Wedding-ready sparkle •',
+              'Trusted by brides •',
+            ]).map((t, i) => (
+              <div key={i} className="flex items-center gap-3 px-6">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold-500/80" />
+                <span className="text-cream-100/85 text-sm md:text-base font-medium tracking-wide whitespace-nowrap">
+                  {t}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Featured */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <motion.h2 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="font-serif text-3xl text-gold-700 text-center mb-12">
+      <section className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 py-16 md:py-20">
+        <motion.h2 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="font-serif font-extrabold tracking-tight text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-gold-500 via-gold-700 to-gold-500 text-center mb-10">
           Featured pieces
         </motion.h2>
         {loadingFeatured ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="aspect-[3/4] bg-cream-200 rounded-xl animate-pulse" />
+              <div key={i} className="aspect-[3/4] bg-cream-200 rounded-2xl animate-pulse" />
             ))}
           </div>
+        ) : featured.length === 0 ? (
+          <p className="text-center text-charcoal-500">No featured items right now.</p>
         ) : (
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-          >
-            {featured.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
-            ))}
-          </motion.div>
+          <div className="relative rounded-3xl bg-white/5 ring-1 ring-white/10 backdrop-blur-sm p-4 md:p-6 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
+            <div className="marquee marquee-no-fade">
+              <div className="marquee-track gap-6 md:gap-8 py-2">
+                {featured.concat(featured).map((p, i) => (
+                  <div key={`${p.id}-${i}`} className="w-[260px] sm:w-[300px] md:w-[320px]">
+                    <ProductCard product={p} index={i} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
       </section>
 
@@ -100,24 +161,25 @@ export default function HomePage() {
         >
           Explore the collection
         </motion.h2>
-        <div className="flex flex-col lg:flex-row gap-8">
-          <aside className="lg:w-64 flex-shrink-0 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-charcoal-700 mb-2">Search</label>
+        <div className="rounded-2xl bg-white shadow-luxury border border-gold-100/60 p-4 md:p-5 mb-8">
+          <div className="flex flex-wrap items-end gap-3 md:gap-4">
+            <div className="min-w-[200px] md:min-w-[240px]">
+              <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">SEARCH</label>
               <input
                 type="text"
                 value={shopSearch}
                 onChange={(e) => setShopSearch(e.target.value)}
                 placeholder="Search products..."
-                className="w-full px-3 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-gold-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-200/60 outline-none transition-all"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-charcoal-700 mb-2">Category</label>
+
+            <div className="min-w-[180px]">
+              <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">CATEGORY</label>
               <select
                 value={shopCategory}
                 onChange={(e) => setShopCategory(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-gold-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-200/60 outline-none transition-all bg-white"
               >
                 <option value="">All</option>
                 {cats.map((c) => (
@@ -125,13 +187,42 @@ export default function HomePage() {
                 ))}
               </select>
             </div>
-            <p className="text-xs text-charcoal-500">
-              Use search and category filters to quickly find pieces you love.
-            </p>
-          </aside>
-          <div className="flex-1">
+
+            <div className="min-w-[130px]">
+              <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">MIN</label>
+              <input
+                type="number"
+                value={shopMinPrice}
+                onChange={(e) => setShopMinPrice(e.target.value)}
+                placeholder="0"
+                className="w-full px-4 py-3 rounded-xl border border-gold-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-200/60 outline-none transition-all"
+              />
+            </div>
+
+            <div className="min-w-[130px]">
+              <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">MAX</label>
+              <input
+                type="number"
+                value={shopMaxPrice}
+                onChange={(e) => setShopMaxPrice(e.target.value)}
+                placeholder="Any"
+                className="w-full px-4 py-3 rounded-xl border border-gold-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-200/60 outline-none transition-all"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setShopSearch(''); setShopCategory(''); setShopMinPrice(''); setShopMaxPrice(''); }}
+              className="px-5 py-3 rounded-xl bg-gold-500 text-white font-semibold hover:bg-gold-600 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1">
             {shopLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="aspect-[3/4] bg-cream-200 rounded-xl animate-pulse" />
                 ))}
@@ -141,18 +232,22 @@ export default function HomePage() {
                 No products found. Try adjusting your filters.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+              >
                 {shopItems.map((p, i) => (
                   <ProductCard key={p.id} product={p} index={i} />
                 ))}
-              </div>
+              </motion.div>
             )}
-            <div className="mt-6 text-right">
-              <Link href="/products" className="text-gold-600 hover:text-gold-700 font-medium text-sm">
-                View all products →
+            <div className="mt-8 text-right">
+              <Link href="/products" className="text-gold-600 hover:text-gold-700 font-medium group">
+                View all products <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
               </Link>
             </div>
-          </div>
         </div>
       </section>
 
@@ -164,15 +259,15 @@ export default function HomePage() {
           </motion.h2>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { quote: 'The pearl necklace was even more beautiful in person. Perfect for my wedding day.', name: 'Sarah M.' },
-              { quote: 'Stunning quality and fast delivery. I got so many compliments!', name: 'Emily L.' },
-              { quote: 'Elegant and timeless. Exactly what I was looking for.', name: 'Jessica K.' },
+              { quote: 'The Bridal Set was even more beautiful in person. Perfect for my wedding day.', name: 'Sarah Jabeen' },
+              { quote: 'Stunning quality and fast delivery. I got so many compliments!', name: 'Ammara Zameer' },
+              { quote: 'Elegant and timeless. Exactly what I was looking for.', name: 'Laiba' },
             ].map((t, i) => (
               <motion.blockquote
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                viewport={{ once: true, amount: 0.5 }}
                 transition={{ delay: i * 0.1 }}
                 className="bg-charcoal-800/50 rounded-xl p-6 border border-gold-500/20"
               >
@@ -189,13 +284,13 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="bg-gradient-to-br from-gold-100 to-cream-300 rounded-2xl p-8 md:p-12 text-center"
+          viewport={{ once: true, amount: 0.5 }}
+          className="bg-gradient-to-br from-gold-100 to-cream-300 rounded-2xl p-8 md:p-12 text-center shadow-luxury"
         >
           <h2 className="font-serif text-2xl md:text-3xl text-gold-800 mb-2">Stay in the loop</h2>
           <p className="text-charcoal-600 mb-6">Subscribe for new arrivals and exclusive offers.</p>
           <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
-            <input type="email" placeholder="Your email" className="flex-1 px-4 py-3 rounded-lg border border-gold-200 focus:border-gold-500 outline-none" />
+            <input type="email" placeholder="Your email" className="flex-1 px-4 py-3 rounded-lg border border-gold-200 focus:border-gold-500 outline-none transition-colors" />
             <button type="submit" className="px-6 py-3 bg-gold-500 text-white rounded-lg font-medium hover:bg-gold-600 transition-colors">
               Subscribe
             </button>

@@ -6,9 +6,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { products } from '@/lib/api';
+import { ProductCard } from '@/components/ProductCard';
 import { useCart } from '@/components/CartProvider';
 import { useAuth } from '@/components/AuthProvider';
-import type { ProductDetail } from '@/lib/api';
+import type { ProductDetail, ProductListItem } from '@/lib/api';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -17,6 +18,7 @@ export default function ProductDetailPage() {
   const id = Number(params?.id);
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [related, setRelated] = useState<ProductListItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [adding, setAdding] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
@@ -29,6 +31,17 @@ export default function ProductDetailPage() {
     if (!id || isNaN(id)) return;
     products.get(id).then(setProduct).catch(() => setProduct(null)).finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!product?.category) return;
+    products
+      .list({ category: product.category, page: 1 })
+      .then((res) => {
+        const others = (res.results || []).filter((p) => p.id !== product.id);
+        setRelated(others.slice(0, 4));
+      })
+      .catch(() => setRelated([]));
+  }, [product?.id, product?.category]);
 
   const images = product?.images?.length
     ? product.images.slice(0, 5) // main + up to 4 optional
@@ -74,6 +87,12 @@ export default function ProductDetailPage() {
   }
 
   const imgUrl = (url: string) => (url.startsWith('http') ? url : `${API_BASE.replace('/api', '')}${url}`);
+  const computedAvg =
+    product.reviews && product.reviews.length
+      ? product.reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / product.reviews.length
+      : null;
+  const rating = typeof product.average_rating === 'number' ? product.average_rating : computedAvg;
+  const ratingStars = rating == null ? '' : '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
@@ -125,6 +144,19 @@ export default function ProductDetailPage() {
         <div>
           <p className="text-gold-600 font-medium">{product.category_name}</p>
           <h1 className="font-serif text-3xl md:text-4xl text-charcoal-800 mt-1">{product.name}</h1>
+          <div className="mt-3 flex items-center gap-3">
+            {rating != null ? (
+              <>
+                <span className="text-gold-500">{ratingStars}</span>
+                <span className="text-sm text-charcoal-600">{rating.toFixed(1)} / 5</span>
+                <span className="text-sm text-charcoal-500">
+                  ({product.reviews?.length ?? 0} reviews)
+                </span>
+              </>
+            ) : (
+              <span className="text-sm text-charcoal-500">No reviews yet</span>
+            )}
+          </div>
           <p className="text-2xl text-gold-700 font-semibold mt-4">{product.price}</p>
           <p className="text-charcoal-600 mt-6 leading-relaxed">{product.description}</p>
 
@@ -137,9 +169,9 @@ export default function ProductDetailPage() {
             {adding ? 'Adding...' : product.stock < 1 ? 'Out of stock' : token ? 'Add to cart' : 'Login to add to cart'}
           </button>
 
-          {product.reviews && product.reviews.length > 0 && (
-            <div className="mt-12 pt-8 border-t border-gold-200">
-              <h3 className="font-serif text-xl text-charcoal-800 mb-4">Reviews</h3>
+          <div className="mt-12 pt-8 border-t border-gold-200">
+            <h3 className="font-serif text-xl text-charcoal-800 mb-4">Reviews</h3>
+            {product.reviews && product.reviews.length > 0 ? (
               <div className="space-y-4">
                 {product.reviews.map((r) => (
                   <div key={r.id} className="bg-cream-50 rounded-lg p-4">
@@ -151,15 +183,43 @@ export default function ProductDetailPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-charcoal-500">No reviews yet.</p>
+            )}
+          </div>
         </div>
       </motion.div>
 
-      {/* Related - placeholder */}
+      {/* Related by category */}
       <section className="mt-16 pt-12 border-t border-gold-100">
-        <h2 className="font-serif text-2xl text-gold-700 mb-6">You may also like</h2>
-        <p className="text-charcoal-500">Browse more in <Link href="/products" className="text-gold-600 hover:underline">Shop</Link>.</p>
+        <h2 className="font-serif text-2xl text-gold-700 mb-6">More from {product.category_name}</h2>
+        {related.length > 0 ? (
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.06 } },
+            }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {related.map((p, i) => (
+              <motion.div
+                key={p.id}
+                variants={{
+                  hidden: { opacity: 0, y: 12 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+                }}
+              >
+                <ProductCard product={p} index={i} />
+              </motion.div>
+            ))}
+          </motion.div>
+        ) : (
+          <p className="text-charcoal-500">
+            Browse more in <Link href="/products" className="text-gold-600 hover:underline">Shop</Link>.
+          </p>
+        )}
       </section>
     </div>
   );

@@ -3,6 +3,7 @@ Bridal Jewelry Store - Database Models
 """
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
@@ -56,9 +57,24 @@ class Product(models.Model):
     slug = models.SlugField(unique=True)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    compare_at_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+        help_text="Original price shown with a strikethrough when the product is on sale.",
+    )
+    is_on_sale = models.BooleanField(
+        default=False,
+        help_text="When enabled, the product card shows a Sale badge and compare-at price.",
+    )
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     stock = models.PositiveIntegerField(default=0)
-    is_featured = models.BooleanField(default=False)
+    is_featured = models.BooleanField(
+        default=False,
+        help_text='Featured products appear in the carousel on the home page.',
+    )
     main_image = models.ForeignKey(
         'ProductImage',
         on_delete=models.SET_NULL,
@@ -158,7 +174,7 @@ class Order(models.Model):
     shipping_phone = models.CharField(max_length=20)
     shipping_address = models.TextField()
     shipping_city = models.CharField(max_length=100)
-    shipping_postal_code = models.CharField(max_length=20)
+    shipping_postal_code = models.CharField(max_length=20, blank=True)
     notes = models.TextField(blank=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -179,7 +195,53 @@ class OrderItem(models.Model):
 
     @property
     def subtotal(self):
+        if self.price is None or self.quantity is None:
+            return 0
         return self.price * self.quantity
 
     def __str__(self):
         return f"{self.quantity}x {self.product.name} (Order {self.order.order_number})"
+
+
+class PasswordResetOTP(models.Model):
+    """
+    One-time password (OTP) for password reset.
+    We store a hash (not the OTP itself) and expire it quickly.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="password_reset_otps")
+    code_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "created_at"]),
+            models.Index(fields=["expires_at"]),
+        ]
+
+    @property
+    def is_expired(self) -> bool:
+        return timezone.now() >= self.expires_at
+
+    @property
+    def is_used(self) -> bool:
+        return self.used_at is not None
+
+
+class StoreSettings(models.Model):
+    """
+    Singleton-like store configuration editable from admin.
+    """
+    delivery_charge = models.DecimalField(max_digits=10, decimal_places=2, default=200)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "Store Settings"
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

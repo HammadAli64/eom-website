@@ -41,16 +41,21 @@ const config: Config = {
         'luxury': '0 4px 24px rgba(184, 134, 11, 0.12)',
         'luxury-lg': '0 8px 40px rgba(184, 134, 11, 0.15)',
         'glow': '0 0 20px rgba(184, 134, 11, 0.2)',
-        'gold-border': '0 0 0 1px rgba(184, 134, 11, 0.4), 0 0 16px rgba(184, 134, 11, 0.15)',
-        'gold-border-hover': '0 0 0 2px rgba(184, 134, 11, 0.5), 0 0 24px rgba(184, 134, 11, 0.25)',
+        'gold-border': '0 0 0 1px rgba(184, 134, 11, 0.2)',
+        'gold-border-hover': '0 0 0 2px rgba(184, 134, 11, 0.4), 0 0 24px rgba(184, 134, 11, 0.2)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',
         'slide-up': 'slideUp 0.5s ease-out',
+        'subtle-lift': 'subtleLift 0.3s ease-out',
       },
       keyframes: {
         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
         slideUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+        subtleLift: {
+          '0%': { transform: 'translateY(0)' },
+          '100%': { transform: 'translateY(-4px)' },
+        },
       },
     },
   },

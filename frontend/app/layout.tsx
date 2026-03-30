@@ -5,6 +5,7 @@ import { AuthProvider } from '@/components/AuthProvider';
 import { CartProvider } from '@/components/CartProvider';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { WhatsAppFloatingButton } from '@/components/WhatsAppFloatingButton';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -36,6 +37,7 @@ export default function RootLayout({
           <CartProvider>
             <Navbar />
             <main className="flex-1">{children}</main>
+            <WhatsAppFloatingButton />
             <Footer />
           </CartProvider>
         </AuthProvider>

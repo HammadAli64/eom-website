@@ -39,3 +39,68 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gold-500;
 }
+
+/* Marquee (continuous scrolling banner) */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-120%) rotate(12deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(220%) rotate(12deg);
+    opacity: 0;
+  }
+}
+
+.marquee {
+  position: relative;
+  overflow: hidden;
+}
+
+.marquee::before,
+.marquee::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 80px;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.marquee::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(26, 24, 22, 1), rgba(26, 24, 22, 0));
+}
+
+.marquee::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(26, 24, 22, 1), rgba(26, 24, 22, 0));
+}
+
+.marquee-no-fade::before,
+.marquee-no-fade::after {
+  display: none;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 22s linear infinite;
+}
+
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}

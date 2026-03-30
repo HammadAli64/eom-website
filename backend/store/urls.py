@@ -10,6 +10,10 @@ urlpatterns = [
     path('auth/signup/', views.signup),
     path('auth/login/', views.login),
     path('auth/me/', views.me),
+    path('auth/password-reset/request/', views.password_reset_request),
+    path('auth/password-reset/confirm/', views.password_reset_confirm),
+    # Store settings
+    path('settings/', views.store_settings),
     # Products
     path('products/', views.ProductListAPI.as_view()),
     path('products/featured/', views.featured_products),
@@ -29,6 +33,7 @@ urlpatterns = [
     path('admin/dashboard/', admin_views.admin_dashboard),
     path('admin/orders/', admin_views.admin_orders_list),
     path('admin/orders/<int:pk>/', admin_views.admin_order_detail),
+    path('admin/settings/', admin_views.admin_store_settings),
     path('admin/products/', admin_views.admin_products_list),
     path('admin/products/<int:pk>/', admin_views.admin_product_detail),
     path('admin/products/<int:pk>/images/', admin_views.admin_product_images),

@@ -14,9 +14,11 @@ export default function AdminNewProductPage() {
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [compareAtPrice, setCompareAtPrice] = useState('');
   const [category, setCategory] = useState('');
   const [stock, setStock] = useState('0');
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isOnSale, setIsOnSale] = useState(false);
   /** 5 slots: index 0 = required, 1–4 = optional */
   const [imageSlots, setImageSlots] = useState<(File | null)[]>([null, null, null, null, null]);
   const [loading, setLoading] = useState(false);
@@ -49,6 +51,10 @@ export default function AdminNewProductPage() {
       formData.append('slug', slug || name.toLowerCase().replace(/\s+/g, '-'));
       formData.append('description', description);
       formData.append('price', String(parseFloat(price) || 0));
+      formData.append('is_on_sale', isOnSale ? 'true' : 'false');
+      if (isOnSale && compareAtPrice) {
+        formData.append('compare_at_price', String(parseFloat(compareAtPrice) || 0));
+      }
       formData.append('category', category);
       formData.append('stock', String(parseInt(stock, 10) || 0));
       formData.append('is_featured', isFeatured ? 'true' : 'false');
@@ -91,6 +97,24 @@ export default function AdminNewProductPage() {
           <div>
             <label className="block text-sm font-medium text-charcoal-700 mb-1">Stock</label>
             <input type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 items-end">
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="sale" checked={isOnSale} onChange={(e) => setIsOnSale(e.target.checked)} className="rounded border-gold-300" />
+            <label htmlFor="sale" className="text-sm text-charcoal-700">On sale</label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-charcoal-700 mb-1">Cross price</label>
+            <input
+              type="number"
+              step="0.01"
+              value={compareAtPrice}
+              onChange={(e) => setCompareAtPrice(e.target.value)}
+              disabled={!isOnSale}
+              placeholder="optional"
+              className="w-full px-4 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none disabled:opacity-60"
+            />
           </div>
         </div>
         <div>

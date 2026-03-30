@@ -7,10 +7,11 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q
+from django.db.models.functions import TruncDay, TruncMonth
 from django.utils import timezone
 from datetime import timedelta
-from .models import AdminUser, Product, Category, Order, User
+from .models import AdminUser, Product, Category, Order, User, StoreSettings
 from .serializers import (
     ProductListSerializer, ProductDetailSerializer,
     OrderSerializer, CategorySerializer, UserSerializer
@@ -85,9 +86,43 @@ def admin_orders_list(request):
         * all (default) -> no filter
     """
     status_key = request.query_params.get('status') or request.GET.get('status') or 'all'
+    # Date filters
+    start = request.query_params.get('start') or request.GET.get('start')
+    end = request.query_params.get('end') or request.GET.get('end')
+    year = request.query_params.get('year') or request.GET.get('year')
+    month = request.query_params.get('month') or request.GET.get('month')
 
     base_qs = Order.objects.select_related('user').order_by('-created_at')
     orders = base_qs
+
+    # Apply date filters (either start/end or year/month)
+    if year and month:
+        try:
+            y = int(year)
+            m = int(month)
+            from datetime import datetime
+            start_dt = timezone.make_aware(datetime(y, m, 1))
+            if m == 12:
+                end_dt = timezone.make_aware(datetime(y + 1, 1, 1))
+            else:
+                end_dt = timezone.make_aware(datetime(y, m + 1, 1))
+            orders = orders.filter(created_at__gte=start_dt, created_at__lt=end_dt)
+            base_qs = base_qs.filter(created_at__gte=start_dt, created_at__lt=end_dt)
+        except Exception:
+            pass
+    elif start or end:
+        try:
+            from datetime import datetime
+            if start:
+                sdt = timezone.make_aware(datetime.fromisoformat(start))
+                orders = orders.filter(created_at__gte=sdt)
+                base_qs = base_qs.filter(created_at__gte=sdt)
+            if end:
+                edt = timezone.make_aware(datetime.fromisoformat(end))
+                orders = orders.filter(created_at__lte=edt)
+                base_qs = base_qs.filter(created_at__lte=edt)
+        except Exception:
+            pass
 
     if status_key == 'pending':
         orders = base_qs.filter(status='pending')
@@ -101,8 +136,8 @@ def admin_orders_list(request):
 
     serializer = OrderSerializer(orders, many=True)
 
-    # Stats across all orders (not just filtered)
-    all_qs = Order.objects.all()
+    # Stats across the *date-filtered* set (not just status-filtered)
+    all_qs = base_qs
     stats = {
         'all': all_qs.count(),
         'pending': all_qs.filter(status='pending').count(),
@@ -110,10 +145,79 @@ def admin_orders_list(request):
         'complete': all_qs.filter(status='delivered').count(),
         'return': all_qs.filter(status='cancelled').count(),
     }
+
+    # Revenue summaries (within date filter)
+    revenue_complete = all_qs.filter(status='delivered').aggregate(Sum('total'))['total__sum'] or 0
+    revenue_all = all_qs.exclude(status='cancelled').aggregate(Sum('total'))['total__sum'] or 0
+
+    # Time series: counts by day (if month filter) else by month (last 12 months)
+    series = []
+    if year and month:
+        qs = all_qs.annotate(day=TruncDay('created_at')).values('day').annotate(
+            all=Count('id'),
+            pending=Count('id', filter=Q(status='pending')),
+            sent=Count('id', filter=Q(status='shipped')),
+            complete=Count('id', filter=Q(status='delivered')),
+            return_=Count('id', filter=Q(status='cancelled')),
+        ).order_by('day')
+        series = [
+            {
+                'label': (r['day'].date().isoformat() if r['day'] else ''),
+                'all': r['all'],
+                'pending': r['pending'],
+                'sent': r['sent'],
+                'complete': r['complete'],
+                'return': r['return_'],
+            }
+            for r in qs
+        ]
+    else:
+        last_12 = timezone.now() - timedelta(days=365)
+        qs = all_qs.filter(created_at__gte=last_12).annotate(m=TruncMonth('created_at')).values('m').annotate(
+            all=Count('id'),
+            pending=Count('id', filter=Q(status='pending')),
+            sent=Count('id', filter=Q(status='shipped')),
+            complete=Count('id', filter=Q(status='delivered')),
+            return_=Count('id', filter=Q(status='cancelled')),
+        ).order_by('m')
+        series = [
+            {
+                'label': (r['m'].date().isoformat()[:7] if r['m'] else ''),
+                'all': r['all'],
+                'pending': r['pending'],
+                'sent': r['sent'],
+                'complete': r['complete'],
+                'return': r['return_'],
+            }
+            for r in qs
+        ]
     return Response({
         'orders': serializer.data,
         'stats': stats,
+        'series': series,
+        'revenue': {
+            'complete': float(revenue_complete),
+            'all_non_cancelled': float(revenue_all),
+        },
     })
+
+
+@api_view(['GET', 'PUT'])
+@permission_classes([AllowAny])
+@admin_jwt_required
+def admin_store_settings(request):
+    settings_obj = StoreSettings.get_solo()
+    if request.method == 'GET':
+        return Response({'delivery_charge': str(settings_obj.delivery_charge)})
+    # PUT update
+    val = request.data.get('delivery_charge')
+    try:
+        from decimal import Decimal
+        settings_obj.delivery_charge = Decimal(str(val))
+        settings_obj.save(update_fields=['delivery_charge'])
+        return Response({'delivery_charge': str(settings_obj.delivery_charge)})
+    except Exception:
+        return Response({'error': 'Invalid delivery_charge'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'PUT', 'PATCH'])
@@ -170,10 +274,20 @@ def admin_products_list(request):
     is_featured = data.get('is_featured')
     if isinstance(is_featured, str):
         is_featured = is_featured.lower() in ('true', '1', 'yes')
+    is_on_sale = data.get('is_on_sale')
+    if isinstance(is_on_sale, str):
+        is_on_sale = is_on_sale.lower() in ('true', '1', 'yes')
     try:
         price = float(data.get('price', 0) or 0)
     except (TypeError, ValueError):
         price = 0
+    compare_at_price = None
+    raw_compare = data.get('compare_at_price')
+    if raw_compare not in (None, ''):
+        try:
+            compare_at_price = float(raw_compare)
+        except (TypeError, ValueError):
+            compare_at_price = None
     try:
         stock = int(data.get('stock', 0) or 0)
     except (TypeError, ValueError):
@@ -189,6 +303,8 @@ def admin_products_list(request):
         slug=slug,
         description=data.get('description', ''),
         price=price,
+        compare_at_price=compare_at_price if is_on_sale else None,
+        is_on_sale=bool(is_on_sale),
         category=cat,
         stock=stock,
         is_featured=bool(is_featured),
@@ -223,13 +339,20 @@ def admin_product_detail(request, pk):
         else:
             data = request.data or {}
             files = []
-        for field in ['name', 'slug', 'description', 'price', 'stock']:
+        for field in ['name', 'slug', 'description', 'price', 'stock', 'compare_at_price']:
             if field in data:
-                setattr(product, field, data[field])
+                val = data[field]
+                if field == 'compare_at_price' and val in (None, ''):
+                    val = None
+                setattr(product, field, val)
         if 'is_featured' in data:
             product.is_featured = str(data['is_featured']).lower() in ('true', '1', 'yes')
+        if 'is_on_sale' in data:
+            product.is_on_sale = str(data['is_on_sale']).lower() in ('true', '1', 'yes')
         if 'category' in data:
             product.category_id = data['category']
+        if not product.is_on_sale:
+            product.compare_at_price = None
         product.save()
 
         # If images are included in a PUT, treat them as additional images (still honoring max 5)
