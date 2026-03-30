@@ -2,6 +2,7 @@
 node_modules/
 frontend/node_modules/
 backend/venv/
+backend/venv311/
 backend/.venv/
 __pycache__/
 *.py[cod]

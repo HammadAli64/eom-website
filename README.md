@@ -192,6 +192,38 @@ npm start
 
 ---
 
+## Deploy on Railway (from GitHub)
+
+This repo is a monorepo, so create **2 Railway services** from the same GitHub repo:
+
+1. **Backend service (Django)**
+   - Root Directory: `backend`
+   - Railway will use `Procfile` automatically.
+   - Add a PostgreSQL plugin and link it to this service.
+   - Set environment variables:
+     - `DEBUG=False`
+     - `DJANGO_SECRET_KEY=<strong-random-secret>`
+     - `ALLOWED_HOSTS=<your-backend-domain>`
+     - `CORS_ALLOWED_ORIGINS=<your-frontend-domain>`
+     - `CSRF_TRUSTED_ORIGINS=<your-frontend-domain>`
+     - Email vars if needed (`EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, etc.)
+
+2. **Frontend service (Next.js)**
+   - Root Directory: `frontend`
+   - Environment variable:
+     - `NEXT_PUBLIC_API_URL=https://<your-backend-domain>/api`
+
+3. **Domain wiring**
+   - Deploy backend first, copy backend public domain.
+   - Use it in frontend `NEXT_PUBLIC_API_URL`.
+   - Deploy frontend, then add frontend domain into backend `CORS_ALLOWED_ORIGINS` and `CSRF_TRUSTED_ORIGINS`.
+
+Template env files:
+- `backend/.env.example`
+- `frontend/.env.example`
+
+---
+
 ## Summary
 
 - Full-store flow: browse, filter, product detail, cart, checkout, order confirmation and emails.
