@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -8,6 +8,14 @@ import { useAuth } from '@/components/AuthProvider';
 import { useCart } from '@/components/CartProvider';
 
 export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[calc(100vh-4rem)] bg-cream-50" />}>
+      <SignupContent />
+    </Suspense>
+  );
+}
+
+function SignupContent() {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -42,7 +50,7 @@ export default function SignupPage() {
       const productId = addToCartId ? Number(addToCartId) : 0;
       if (productId && !isNaN(productId)) {
         await addToCart(productId, 1);
-        router.push('/cart');
+        router.push(`/products/${productId}`);
       } else {
         router.push('/');
       }

@@ -40,6 +40,10 @@ export const auth = {
   login: (email: string, password: string) =>
     api<{ user: User; token: string }>('/auth/login/', { method: 'POST', body: JSON.stringify({ email, password }) }),
   me: () => api<User>('/auth/me/'),
+  passwordResetRequest: (email: string) =>
+    api<{ ok: boolean }>('/auth/password-reset/request/', { method: 'POST', token: false, body: JSON.stringify({ email }) }),
+  passwordResetConfirm: (data: { email: string; otp: string; new_password: string; new_password_confirm: string }) =>
+    api<{ user: User; token: string }>('/auth/password-reset/confirm/', { method: 'POST', token: false, body: JSON.stringify(data) }),
 };
 
 // Products
@@ -86,8 +90,16 @@ export const admin = {
   login: (username: string, password: string) =>
     api<{ token: string; username: string }>('/admin/login/', { method: 'POST', token: false, body: JSON.stringify({ username, password }) }),
   dashboard: () => api<AdminDashboard>('/admin/dashboard/', { adminToken: true }),
-  orders: (status?: AdminOrderFilter) =>
-    api<AdminOrdersResponse>(`/admin/orders/${status && status !== 'all' ? `?status=${status}` : ''}`, { adminToken: true }),
+  orders: (params?: { status?: AdminOrderFilter; year?: number; month?: number; start?: string; end?: string }) => {
+    const sp = new URLSearchParams();
+    if (params?.status && params.status !== 'all') sp.set('status', params.status);
+    if (params?.year) sp.set('year', String(params.year));
+    if (params?.month) sp.set('month', String(params.month));
+    if (params?.start) sp.set('start', params.start);
+    if (params?.end) sp.set('end', params.end);
+    const q = sp.toString();
+    return api<AdminOrdersResponse>(`/admin/orders/${q ? `?${q}` : ''}`, { adminToken: true });
+  },
   order: (id: number) => api<Order>(`/admin/orders/${id}/`, { adminToken: true }),
   orderUpdateStatus: (id: number, status: OrderStatusValue) =>
     api<Order>(`/admin/orders/${id}/`, { method: 'PATCH', adminToken: true, body: JSON.stringify({ status }) }),
@@ -135,6 +147,9 @@ export const admin = {
   categoryDelete: (id: number) =>
     api<void>(`/admin/categories/${id}/`, { method: 'DELETE', adminToken: true }),
   users: () => api<User[]>('/admin/users/', { adminToken: true }),
+  storeSettings: () => api<{ delivery_charge: string }>('/admin/settings/', { adminToken: true }),
+  storeSettingsUpdate: (delivery_charge: string) =>
+    api<{ delivery_charge: string }>('/admin/settings/', { method: 'PUT', adminToken: true, body: JSON.stringify({ delivery_charge }) }),
 };
 
 // Types
@@ -164,6 +179,10 @@ export interface ProductListItem {
   name: string;
   slug: string;
   price: string;
+  compare_at_price?: string | null;
+  is_on_sale?: boolean;
+  average_rating?: number | null;
+  reviews_count?: number;
   category: number;
   category_name: string;
   stock: number;
@@ -247,7 +266,6 @@ export interface Order {
 
 export interface ShippingInfo {
   shipping_name: string;
-  shipping_email: string;
   shipping_phone: string;
   shipping_address: string;
   shipping_city: string;
@@ -276,4 +294,6 @@ export interface AdminOrderStats {
 export interface AdminOrdersResponse {
   orders: Order[];
   stats: AdminOrderStats;
+  series?: Array<{ label: string; all: number; pending: number; sent: number; complete: number; return: number }>;
+  revenue?: { complete: number; all_non_cancelled: number };
 }

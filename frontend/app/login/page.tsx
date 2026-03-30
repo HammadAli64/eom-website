@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -8,6 +8,14 @@ import { useAuth } from '@/components/AuthProvider';
 import { useCart } from '@/components/CartProvider';
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[calc(100vh-4rem)] bg-cream-50" />}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,7 +35,7 @@ export default function LoginPage() {
       const productId = addToCartId ? Number(addToCartId) : 0;
       if (productId && !isNaN(productId)) {
         await addToCart(productId, 1);
-        router.push('/cart');
+        router.push(`/products/${productId}`);
       } else {
         router.push('/');
       }
@@ -98,6 +106,11 @@ export default function LoginPage() {
                 className="w-full px-4 py-3 rounded-lg border border-gold-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-200 transition-all outline-none"
                 placeholder="••••••••"
               />
+              <div className="mt-2 text-right">
+                <Link href="/forgot-password" className="text-sm text-gold-700 hover:text-gold-800 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
             </motion.div>
             <motion.button
               initial={{ opacity: 0, y: 10 }}
