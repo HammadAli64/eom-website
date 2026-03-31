@@ -21,6 +21,17 @@ def _env_list(name: str, default: str = "") -> list[str]:
     raw = os.environ.get(name, default)
     return [item.strip() for item in raw.split(",") if item.strip()]
 
+
+def _normalize_origin(value: str) -> str:
+    origin = value.strip().rstrip("/")
+    if origin and not origin.startswith(("http://", "https://")):
+        origin = f"https://{origin}"
+    return origin
+
+
+def _normalized_origins(name: str) -> list[str]:
+    return [_normalize_origin(item) for item in _env_list(name) if _normalize_origin(item)]
+
 ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 
 INSTALLED_APPS = [
@@ -151,9 +162,9 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
 ]
-CORS_ALLOWED_ORIGINS += _env_list('CORS_ALLOWED_ORIGINS')
+CORS_ALLOWED_ORIGINS += _normalized_origins('CORS_ALLOWED_ORIGINS')
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
+CSRF_TRUSTED_ORIGINS = _normalized_origins('CSRF_TRUSTED_ORIGINS')
 
 # Railway/Proxy settings for HTTPS-aware request handling
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -173,9 +184,7 @@ _EMAIL_USER = EMAIL_HOST_USER or 'your-email@gmail.com'
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', f'Bridal Jewelry Store <{_EMAIL_USER}>')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL  # for admin error emails
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', _EMAIL_USER)
-import os 
+
 # Media files (product images)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
