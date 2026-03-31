@@ -173,7 +173,9 @@ _EMAIL_USER = EMAIL_HOST_USER or 'your-email@gmail.com'
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', f'Bridal Jewelry Store <{_EMAIL_USER}>')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL  # for admin error emails
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', _EMAIL_USER)
-
+import os 
 # Media files (product images)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
