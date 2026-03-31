@@ -68,17 +68,51 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database: SQLite for dev, PostgreSQL compatible
-if os.environ.get('DATABASE_URL'):
-    import dj_database_url
-    DATABASES = {'default': dj_database_url.config(conn_max_age=600)}
-else:
-    DATABASES = {
+# Database: PostgreSQL via DATABASE_URL (Railway) or POSTGRES_* / PG* in .env
+def _database_from_env():
+    # Railway: private URL when Postgres is linked; DATABASE_PUBLIC_URL is the public proxy (e.g. local tools)
+    database_url = (
+        os.environ.get('DATABASE_URL', '').strip()
+        or os.environ.get('DATABASE_PUBLIC_URL', '').strip()
+    )
+    if database_url:
+        import dj_database_url
+        # Railway / Heroku sometimes use postgres:// — normalize for psycopg
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        return {'default': dj_database_url.parse(database_url, conn_max_age=600)}
+
+    pg_host = (os.environ.get('POSTGRES_HOST') or os.environ.get('PGHOST') or '').strip()
+    if pg_host:
+        return {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.environ.get('POSTGRES_DB') or os.environ.get('PGDATABASE') or 'postgres',
+                'USER': os.environ.get('POSTGRES_USER') or os.environ.get('PGUSER') or 'postgres',
+                'PASSWORD': os.environ.get('POSTGRES_PASSWORD') or os.environ.get('PGPASSWORD') or '',
+                'HOST': pg_host,
+                'PORT': os.environ.get('POSTGRES_PORT') or os.environ.get('PGPORT') or '5432',
+                'CONN_MAX_AGE': 600,
+            }
+        }
+
+    if os.environ.get('USE_SQLITE', '').lower() in ('1', 'true', 'yes'):
+        return {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+
+    return {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
+
+DATABASES = _database_from_env()
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
