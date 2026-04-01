@@ -97,7 +97,7 @@ export default function ProductDetailPage() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="grid md:grid-cols-2 gap-8 lg:gap-12"
+        className="grid md:grid-cols-2 gap-6 md:gap-8 lg:gap-12"
       >
         <div>
           <div className="aspect-square relative rounded-2xl overflow-hidden bg-cream-200 shadow-gold-border">

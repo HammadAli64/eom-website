@@ -153,9 +153,14 @@ export default function HomePage() {
         >
           Explore the collection
         </motion.h2>
-        <div className="rounded-2xl bg-white shadow-luxury border border-gold-100/60 p-4 md:p-5 mb-8">
-          <div className="flex flex-wrap items-end gap-3 md:gap-4">
-            <div className="min-w-[200px] md:min-w-[240px]">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="rounded-2xl bg-white shadow-luxury border border-gold-100/60 p-4 md:p-5 mb-8"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 items-end">
+            <div className="sm:col-span-2">
               <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">SEARCH</label>
               <input
                 type="text"
@@ -166,7 +171,7 @@ export default function HomePage() {
               />
             </div>
 
-            <div className="min-w-[180px]">
+            <div>
               <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">CATEGORY</label>
               <select
                 value={shopCategory}
@@ -180,7 +185,7 @@ export default function HomePage() {
               </select>
             </div>
 
-            <div className="min-w-[130px]">
+            <div>
               <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">MIN</label>
               <input
                 type="number"
@@ -191,7 +196,7 @@ export default function HomePage() {
               />
             </div>
 
-            <div className="min-w-[130px]">
+            <div>
               <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">MAX</label>
               <input
                 type="number"
@@ -202,15 +207,17 @@ export default function HomePage() {
               />
             </div>
 
-            <button
-              type="button"
-              onClick={() => { setShopSearch(''); setShopCategory(''); setShopMinPrice(''); setShopMaxPrice(''); }}
-              className="px-5 py-3 rounded-xl bg-gold-500 text-white font-semibold hover:bg-gold-600 transition-colors"
-            >
-              Clear
-            </button>
+            <div className="sm:col-span-2 lg:col-span-5">
+              <button
+                type="button"
+                onClick={() => { setShopSearch(''); setShopCategory(''); setShopMinPrice(''); setShopMaxPrice(''); }}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gold-500 text-white font-semibold hover:bg-gold-600 transition-colors"
+              >
+                Clear
+              </button>
+            </div>
           </div>
-        </div>
+        </motion.div>
 
         <div className="flex-1">
             {shopLoading ? (

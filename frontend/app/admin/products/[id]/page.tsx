@@ -112,7 +112,7 @@ export default function AdminEditProductPage() {
       <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-serif text-2xl text-charcoal-800 mb-8">
         Edit product
       </motion.h1>
-      <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
+      <form onSubmit={handleSubmit} className="max-w-xl w-full space-y-4">
         {error && <p className="text-red-600 text-sm">{error}</p>}
         <div>
           <label className="block text-sm font-medium text-charcoal-700 mb-1">Name *</label>
@@ -126,7 +126,7 @@ export default function AdminEditProductPage() {
           <label className="block text-sm font-medium text-charcoal-700 mb-1">Description *</label>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={4} className="w-full px-4 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none" />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-charcoal-700 mb-1">Price *</label>
             <input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required className="w-full px-4 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none" />
@@ -136,7 +136,7 @@ export default function AdminEditProductPage() {
             <input type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-gold-200 focus:border-gold-500 outline-none" />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
           <div className="flex items-center gap-2">
             <input type="checkbox" id="sale" checked={isOnSale} onChange={(e) => setIsOnSale(e.target.checked)} className="rounded border-gold-300" />
             <label htmlFor="sale" className="text-sm text-charcoal-700">On sale</label>

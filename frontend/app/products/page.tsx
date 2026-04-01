@@ -49,9 +49,14 @@ export default function ProductsPage() {
         Shop
       </motion.h1>
 
-      <div className="rounded-2xl bg-white shadow-luxury border border-gold-100/60 p-4 md:p-5 mb-8">
-        <div className="flex flex-wrap items-end gap-3 md:gap-4">
-          <div className="flex-1 min-w-[220px]">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="rounded-2xl bg-white shadow-luxury border border-gold-100/60 p-4 md:p-5 mb-8"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4 items-end">
+          <div className="sm:col-span-2 lg:col-span-2">
             <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">SEARCH</label>
             <input
               type="text"
@@ -62,7 +67,7 @@ export default function ProductsPage() {
             />
           </div>
 
-          <div className="min-w-[180px]">
+          <div className="sm:col-span-1 lg:col-span-1">
             <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">CATEGORY</label>
             <select
               value={category}
@@ -76,7 +81,7 @@ export default function ProductsPage() {
             </select>
           </div>
 
-          <div className="min-w-[120px]">
+          <div className="sm:col-span-1 lg:col-span-1">
             <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">MIN</label>
             <input
               type="number"
@@ -87,7 +92,7 @@ export default function ProductsPage() {
             />
           </div>
 
-          <div className="min-w-[120px]">
+          <div className="sm:col-span-1 lg:col-span-1">
             <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">MAX</label>
             <input
               type="number"
@@ -98,7 +103,7 @@ export default function ProductsPage() {
             />
           </div>
 
-          <div className="min-w-[200px]">
+          <div className="sm:col-span-2 lg:col-span-1">
             <label className="block text-xs font-extrabold tracking-wide text-charcoal-700 mb-1">SORT</label>
             <select
               value={sort}
@@ -112,22 +117,24 @@ export default function ProductsPage() {
             </select>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setSearch('');
-              setCategory('');
-              setMinPrice('');
-              setMaxPrice('');
-              setSort('');
-              setPage(1);
-            }}
-            className="px-5 py-3 rounded-xl bg-gold-500 text-white font-semibold hover:bg-gold-600 transition-colors"
-          >
-            Clear
-          </button>
+          <div className="sm:col-span-2 lg:col-span-6">
+            <button
+              type="button"
+              onClick={() => {
+                setSearch('');
+                setCategory('');
+                setMinPrice('');
+                setMaxPrice('');
+                setSort('');
+                setPage(1);
+              }}
+              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gold-500 text-white font-semibold hover:bg-gold-600 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       <div>
           {loading ? (
