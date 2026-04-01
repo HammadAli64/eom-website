@@ -43,8 +43,6 @@ export default function HomePage() {
     }).finally(() => setLoadingFeatured(false));
   }, []);
 
-  // Featured carousel is a continuous marquee (see markup below)
-
   useEffect(() => {
     categories.list().then(setCats).catch(() => []);
   }, []);
@@ -137,16 +135,10 @@ export default function HomePage() {
         ) : featured.length === 0 ? (
           <p className="text-center text-charcoal-500">No featured items right now.</p>
         ) : (
-          <div className="relative rounded-3xl bg-white/5 ring-1 ring-white/10 backdrop-blur-sm p-4 md:p-6 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
-            <div className="marquee marquee-no-fade">
-              <div className="marquee-track gap-6 md:gap-8 py-2">
-                {featured.concat(featured).map((p, i) => (
-                  <div key={`${p.id}-${i}`} className="w-[260px] sm:w-[300px] md:w-[320px]">
-                    <ProductCard product={p} index={i} />
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {featured.map((p, i) => (
+              <ProductCard key={p.id} product={p} index={i} />
+            ))}
           </div>
         )}
       </section>
