@@ -7,10 +7,8 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useCart } from './CartProvider';
 import { useAuth } from './AuthProvider';
-import type { ProductListItem } from '@/lib/api';
+import { API_ORIGIN, type ProductListItem } from '@/lib/api';
 import { QuickViewModal } from './QuickViewModal';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 function formatPKR(value: string | number | null | undefined) {
   if (value == null) return '';
@@ -54,7 +52,7 @@ export function ProductCard({ product, index = 0 }: { product: ProductListItem; 
   const { addToCart } = useCart();
   const { token } = useAuth();
 
-  const imgSrc = product.primary_image?.startsWith('http') ? product.primary_image : `${API_BASE.replace('/api', '')}${product.primary_image || ''}`;
+  const imgSrc = product.primary_image?.startsWith('http') ? product.primary_image : `${API_ORIGIN}${product.primary_image || ''}`;
   const showSale = Boolean(product.is_on_sale && product.compare_at_price);
   const rating = typeof product.average_rating === 'number' ? product.average_rating : null;
   const reviewsCount = typeof product.reviews_count === 'number' ? product.reviews_count : null;

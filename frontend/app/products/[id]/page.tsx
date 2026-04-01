@@ -5,13 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { products } from '@/lib/api';
+import { API_ORIGIN, products } from '@/lib/api';
 import { ProductCard } from '@/components/ProductCard';
 import { useCart } from '@/components/CartProvider';
 import { useAuth } from '@/components/AuthProvider';
 import type { ProductDetail, ProductListItem } from '@/lib/api';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -86,7 +84,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const imgUrl = (url: string) => (url.startsWith('http') ? url : `${API_BASE.replace('/api', '')}${url}`);
+  const imgUrl = (url: string) => (url.startsWith('http') ? url : `${API_ORIGIN}${url}`);
   const computedAvg =
     product.reviews && product.reviews.length
       ? product.reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / product.reviews.length

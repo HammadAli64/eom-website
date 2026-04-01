@@ -1,4 +1,19 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const RAW_API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').trim();
+
+function withProtocol(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // Railway env vars are often entered as domain only.
+  return `https://${url}`;
+}
+
+const NORMALIZED_API_URL = withProtocol(RAW_API_URL).replace(/\/+$/, '');
+
+export const API_BASE = NORMALIZED_API_URL.endsWith('/api')
+  ? NORMALIZED_API_URL
+  : `${NORMALIZED_API_URL}/api`;
+
+export const API_ORIGIN = API_BASE.replace(/\/api$/, '');
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;

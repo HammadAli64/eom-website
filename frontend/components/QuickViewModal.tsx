@@ -4,10 +4,8 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { products } from '@/lib/api';
+import { API_ORIGIN, products } from '@/lib/api';
 import type { ProductDetail } from '@/lib/api';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export function QuickViewModal({ productId, onClose }: { productId: number; onClose: () => void }) {
   const [product, setProduct] = useState<ProductDetail | null>(null);
@@ -50,14 +48,14 @@ export function QuickViewModal({ productId, onClose }: { productId: number; onCl
               <div className="aspect-square relative rounded-lg overflow-hidden bg-cream-200 mb-4">
                 {product.images?.[0] ? (
                   <Image
-                    src={product.images[0].image.startsWith('http') ? product.images[0].image : `${API_BASE.replace('/api', '')}${product.images[0].image}`}
+                    src={product.images[0].image.startsWith('http') ? product.images[0].image : `${API_ORIGIN}${product.images[0].image}`}
                     alt={product.name}
                     fill
                     className="object-contain"
                     unoptimized
                   />
                 ) : product.primary_image ? (
-                  <Image src={product.primary_image.startsWith('http') ? product.primary_image : `${API_BASE.replace('/api', '')}${product.primary_image}`} alt={product.name} fill className="object-contain" unoptimized />
+                  <Image src={product.primary_image.startsWith('http') ? product.primary_image : `${API_ORIGIN}${product.primary_image}`} alt={product.name} fill className="object-contain" unoptimized />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gold-400 font-serif text-2xl">{product.name}</div>
                 )}

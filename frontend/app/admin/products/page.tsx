@@ -4,11 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { admin } from '@/lib/api';
+import { API_ORIGIN, admin } from '@/lib/api';
 import type { ProductListItem } from '@/lib/api';
 import type { Category } from '@/lib/api';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductListItem[]>([]);
@@ -69,7 +67,7 @@ export default function AdminProductsPage() {
                     <td className="p-3">
                       {p.primary_image ? (
                         <div className="w-12 h-12 relative rounded overflow-hidden bg-cream-200">
-                          <Image src={p.primary_image.startsWith('http') ? p.primary_image : `${API_BASE.replace('/api', '')}${p.primary_image}`} alt="" fill className="object-cover" unoptimized />
+                          <Image src={p.primary_image.startsWith('http') ? p.primary_image : `${API_ORIGIN}${p.primary_image}`} alt="" fill className="object-cover" unoptimized />
                         </div>
                       ) : <span className="text-charcoal-400">—</span>}
                     </td>

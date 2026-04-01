@@ -5,10 +5,8 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { admin } from '@/lib/api';
+import { API_ORIGIN, admin } from '@/lib/api';
 import type { ProductDetail, ProductImage } from '@/lib/api';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000';
 
 export default function AdminEditProductPage() {
   const params = useParams();
@@ -175,7 +173,7 @@ export default function AdminEditProductPage() {
             <div className="flex flex-wrap gap-3 mb-3">
               {product.images.map((img: ProductImage) => (
                 <div key={img.id} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gold-200 bg-cream-100">
-                  <Image src={img.image.startsWith('http') ? img.image : `${API_BASE}${img.image}`} alt="" fill className="object-contain" unoptimized />
+                  <Image src={img.image.startsWith('http') ? img.image : `${API_ORIGIN}${img.image}`} alt="" fill className="object-contain" unoptimized />
                   <button type="button" onClick={() => handleDeleteImage(img.id)} disabled={deletingId === img.id} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center hover:bg-red-600 disabled:opacity-50">
                     ×
                   </button>

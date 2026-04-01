@@ -7,8 +7,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useCart } from '@/components/CartProvider';
 import { useAuth } from '@/components/AuthProvider';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { API_ORIGIN } from '@/lib/api';
 
 export default function CartPage() {
   const { cart, loading, updateQuantity, removeItem } = useCart();
@@ -70,7 +69,7 @@ export default function CartPage() {
             <Link href={`/products/${item.product}`} className="w-full sm:w-24 h-24 relative rounded-lg overflow-hidden bg-cream-200 flex-shrink-0 block">
               {item.product_image ? (
                 <Image
-                  src={item.product_image.startsWith('http') ? item.product_image : `${API_BASE.replace('/api', '')}${item.product_image}`}
+                  src={item.product_image.startsWith('http') ? item.product_image : `${API_ORIGIN}${item.product_image}`}
                   alt={item.product_name}
                   fill
                   className="object-contain"
