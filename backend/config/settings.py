@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'cloudinary',
+    'cloudinary_storage',
     'store',
 ]
 
@@ -188,3 +190,17 @@ ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', _EMAIL_USER)
 # Media files (product images)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Cloudinary media storage (recommended on Railway). Keep disabled locally if not needed.
+USE_CLOUDINARY = os.environ.get('USE_CLOUDINARY', 'False').lower() == 'true'
+if USE_CLOUDINARY:
+    CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '').strip()
+    if not CLOUDINARY_URL:
+        cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME', '').strip()
+        api_key = os.environ.get('CLOUDINARY_API_KEY', '').strip()
+        api_secret = os.environ.get('CLOUDINARY_API_SECRET', '').strip()
+        if cloud_name and api_key and api_secret:
+            CLOUDINARY_URL = f"cloudinary://{api_key}:{api_secret}@{cloud_name}"
+            os.environ.setdefault('CLOUDINARY_URL', CLOUDINARY_URL)
+    if CLOUDINARY_URL:
+        DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
