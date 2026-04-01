@@ -57,7 +57,7 @@ export default function AdminOrdersPage() {
       </motion.h1>
 
       {/* Filter + stats */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div className="flex flex-col gap-4 mb-6">
         <div className="flex flex-wrap gap-2">
           {FILTER_OPTIONS.map((opt) => (
             <button
@@ -85,8 +85,8 @@ export default function AdminOrdersPage() {
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <input
               type="date"
               value={fromDate}
@@ -108,25 +108,27 @@ export default function AdminOrdersPage() {
               Clear range
             </button>
           </div>
-          <select
-            value={month}
-            onChange={(e) => setMonth(parseInt(e.target.value, 10))}
-            className="px-3 py-2 rounded-lg border border-gold-200 bg-white text-sm"
-          >
-            {Array.from({ length: 12 }).map((_, i) => (
-              <option key={i + 1} value={i + 1}>
-                {new Date(2000, i, 1).toLocaleString(undefined, { month: 'long' })}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            value={year}
-            onChange={(e) => setYear(parseInt(e.target.value, 10) || now.getFullYear())}
-            className="w-28 px-3 py-2 rounded-lg border border-gold-200 bg-white text-sm"
-            min={2020}
-            max={2100}
-          />
+          <div className="flex gap-2">
+            <select
+              value={month}
+              onChange={(e) => setMonth(parseInt(e.target.value, 10))}
+              className="flex-1 px-3 py-2 rounded-lg border border-gold-200 bg-white text-sm"
+            >
+              {Array.from({ length: 12 }).map((_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {new Date(2000, i, 1).toLocaleString(undefined, { month: 'long' })}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              value={year}
+              onChange={(e) => setYear(parseInt(e.target.value, 10) || now.getFullYear())}
+              className="w-28 px-3 py-2 rounded-lg border border-gold-200 bg-white text-sm"
+              min={2020}
+              max={2100}
+            />
+          </div>
         </div>
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-charcoal-700">

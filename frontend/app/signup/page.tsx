@@ -113,7 +113,7 @@ function SignupContent() {
                 ))}
               </motion.div>
             ) : null}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                 <label className="block text-sm font-medium text-charcoal-700 mb-1">First name</label>
                 <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-gold-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-200 outline-none" />
