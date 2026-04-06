@@ -127,7 +127,7 @@ export default function HomePage() {
           Featured pieces
         </motion.h2>
         {loadingFeatured ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="aspect-[3/4] bg-cream-200 rounded-2xl animate-pulse" />
             ))}
@@ -135,7 +135,7 @@ export default function HomePage() {
         ) : featured.length === 0 ? (
           <p className="text-center text-charcoal-500">No featured items right now.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
             {featured.map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
@@ -221,7 +221,7 @@ export default function HomePage() {
 
         <div className="flex-1">
             {shopLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="aspect-[3/4] bg-cream-200 rounded-xl animate-pulse" />
                 ))}
@@ -235,7 +235,7 @@ export default function HomePage() {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.2 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+                className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8"
               >
                 {shopItems.map((p, i) => (
                   <ProductCard key={p.id} product={p} index={i} />

@@ -103,7 +103,7 @@ export function ProductCard({ product, index = 0 }: { product: ProductListItem; 
                   alt={product.name}
                   fill
                   className="object-contain transition-transform duration-700 ease-out group-hover:scale-110"
-                  sizes="(max-width: 768px) 100vw, 25vw"
+                  sizes="(max-width: 1024px) 50vw, 25vw"
                   unoptimized={imgSrc.startsWith('http://localhost')}
                 />
                 {/* shimmer */}

@@ -138,7 +138,7 @@ export default function ProductsPage() {
 
       <div>
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="aspect-[3/4] bg-cream-200 rounded-xl animate-pulse" />
               ))}
@@ -151,7 +151,7 @@ export default function ProductsPage() {
             <>
               <motion.div
                 layout
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+                className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6"
               >
                 {data.results.map((p, i) => (
                   <ProductCard key={p.id} product={p} index={i} />
